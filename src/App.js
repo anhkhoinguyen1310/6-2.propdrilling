@@ -12,7 +12,7 @@ import {
   FormControl,
   ListGroupItem,
 } from "react-bootstrap";
-
+import Modal from "react-modal";
 import "./App.css";
 
 import { COMMENTS } from './utils'
@@ -22,7 +22,7 @@ const Avatar = (props) => {
     <img
       alt="profile"
       className="rounded-circle"
-      style={{height: 50, width: 50 }}
+      style={{ height: 50, width: 50 }}
       src={
         "https://cdn.icon-icons.com/icons2/1378/PNG/512/avatardefault_92824.png"
       }
@@ -30,14 +30,14 @@ const Avatar = (props) => {
   );
 };
 
-const PostForm = () => {
+const PostForm = (props) => {
   return (
     <Form inline className="d-flex align-items-center">
       <Form.Control
         type="text"
         className="mr-3"
-        style={{width: '90%'}}
-        placeholder="What's on your mind?"
+        style={{ width: '90%' }}
+        placeholder= {"What's on your mind? " + props.currentUser.email}
       />
       <Button variant="primary" type="submit">
         Post!
@@ -46,10 +46,12 @@ const PostForm = () => {
   );
 }
 
-const CommentForm = () => {
+const CommentForm = (props) => {
   return (
     <Form inline>
-      <Form.Control type="text" placeholder="What's on your mind?" className="w-75 mr-3" />
+      <Form.Control type="text" 
+    placeholder= {"What's on your mind " + props.currentUser.email  + " ?"}
+      className="w-75 mr-3" />
       <Button variant="primary" type="submit">
         Post!
       </Button>
@@ -98,7 +100,7 @@ const Post = (props) => {
       />
       <Card.Body>
         <Comments comments={COMMENTS} />
-        <CommentForm />
+        <CommentForm currentUser = {props.currentUser} />
       </Card.Body>
     </Card>
   );
@@ -115,12 +117,22 @@ const Navbarr = (props) => {
           <Nav.Link href="#home">Home</Nav.Link>
           <Nav.Link href="#link">Link</Nav.Link>
         </Nav>
-        <Form inline onSubmit={(e) => props.onSignIn(e, email)}>
-          <FormControl type="text" placeholder="Email" className="mr-sm-2" onChange={(e) => setEmail(e.target.value)} value={email}/>
-          <Button type="submit" variant="outline-success">
-            Sign In
-          </Button>
-        </Form>
+        {props.currentUser.email ? (
+        <Button variant="outline-danger"
+         onClick = {props.onSignOut}>
+        Sign Out - {props.currentUser.email}
+      </Button>
+        ) 
+        : 
+        ( 
+           <Form inline onSubmit={(e) => props.onSignIn(e, email)}>
+           <FormControl type="text" placeholder="Email" className="mr-sm-2" onChange={(e) => setEmail(e.target.value)} value={email} />
+           <Button type="submit" variant="outline-success" onClick = {(e) => props.onSignIn(e,email)}>
+             Sign In
+           </Button>
+         </Form>
+        ) }
+       
       </Navbar.Collapse>
     </Navbar>
   );
@@ -150,45 +162,63 @@ const Hobbies = () => {
     </div>
   );
 };
-const Intro = () => {
+const Intro = (props) => {
   return (
     <div className="d-flex flex-column h-25 border w-100 align-items-start justify-content-around pl-3 mb-3">
       Introduction
-      <button className="w-25">Edit Details</button>
+      <button className="w-25" onClick = {props.openModal}>Edit Details</button>
     </div>
   );
 };
 
-const Left = () => {
+const Left = (props) => {
+  const [open, setOpen] = useState(false);
+  function openModal() {
+    setOpen(true);
+  }
+  function closeModal() {
+    setOpen(false);
+  }
+
   return (
     <Col className="d-flex flex-column align-items-center justify-content-center">
-      <Intro />
+      <Intro openModal={openModal} />
       <Hobbies />
       <Photos />
       <Friends />
+      <Modal
+        isOpen={open}
+        onRequestClose={closeModal}
+        contentLabel="Example Modal"
+      >
+        <div>Change my email!</div>
+        <form onSubmit={props.changeEmail}>
+          <input onChange={props.changeEmail} />
+        </form>
+      </Modal>
     </Col>
   );
-}
+};
 
-const Right = () => {
+const Right = (props) => {
   return (
     <Col className="d-flex align-items-center justify-content-center">
-      <Post />
+      <Post currentUser = {props.currentUser} />
     </Col>
   )
 }
 
-const Main = () => {
+const Main = (props) => {
   return (
     <Container className="border pt-5 mt-5">
       <Row className="mb-5">
         <Col>
-          <PostForm />
+          <PostForm currentUser = {props.currentUser} />
         </Col>
       </Row>
       <Row>
-        <Left />
-        <Right />
+        <Left changeEmail={props.changeEmail}/>
+        <Right currentUser={props.currentUser}  />
       </Row>
     </Container>
   );
@@ -201,10 +231,22 @@ function App() {
     e.preventDefault()
     setCurrentUser({ email: email })
   }
+
+  const onSignOut = () => {
+    setCurrentUser({email: ""});
+  }
+  const changeEmail = (e) => {
+    e.preventDefault();
+    setCurrentUser({ email: e.target.value });
+  };
+  console.log({currentUser })
   return (
     <div className="main">
-      <Navbarr onSignIn={onSignIn} />
-      <Main />
+      <Navbarr 
+      onSignIn={onSignIn} 
+      onSignOut = {onSignOut}
+      currentUser = {currentUser} />
+      <Main currentUser = {currentUser} changeEmail = {changeEmail}/>
     </div>
   );
 }
